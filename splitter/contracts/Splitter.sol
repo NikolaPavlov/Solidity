@@ -6,15 +6,13 @@ contract Splitter {
     mapping (address => uint) public balances;
 
 
-    // events
     event log_split(address depostitor, address out1, address out2, uint amount);
 
-    modifier only_owner() {
+    modifier onlyOwner() {
         require (msg.sender == owner);
         _;
     }
 
-    // constructor
     function Splitter () {
         owner == msg.sender;
     }
@@ -39,7 +37,7 @@ contract Splitter {
         return address(adrr).balance;
     }
 
-    function killTheContract() returns (bool success) {
+    function killTheContract() onlyOwner {
         suicide(owner);
         return true;
     }
