@@ -18,6 +18,10 @@ contract Remittance {
     event LogCreateTransfer(address creator, address recipient, uint value, bytes32 passhash);
     event LogWithdrawTransfer(address recipient, uint value, bytes32 passhash);
 
+    modifier onlyOwner {
+        require(msg.sender == owner);
+        _;
+    }
 
     function Remittance() {
         owner = msg.sender;
@@ -57,7 +61,22 @@ contract Remittance {
 
         return true;
     }
-}
 
-// 0xa22d305debca5e692732aad3a70e5aeea526c9c439c2536f615ad7e9baee23fc
-// 0xa22d305debca5e692732aad3a70e5aeea526c9c439c2536f615ad7e9baee23fc
+    function refundTransfer(string pass1, string pass2) public returns (bool success) {
+        bytes32 passhash = keccak256(pass1, pass2);
+
+        Transfer toRefund = pending_transfers[passhash];
+
+        require(msg.sender == toRefund.creator);
+        require(block.number <= toRefund.deadline);
+
+        delete pending_transfers[passhash];
+        msg.sender.transfer(toRefund.amount);
+
+        return true;
+    }
+
+    function kill_the_contract() onlyOwner {
+        suicide(owner);
+    }
+}
