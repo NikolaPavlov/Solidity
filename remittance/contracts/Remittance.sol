@@ -16,7 +16,7 @@ contract Remittance {
     }
 
     event LogCreateTransfer(address creator, address recipient, uint value, bytes32 passhash);
-    event LogWithdrawTransfer(address recipient, uint value, bytes32 passhash);
+    event LogWithdrawTransfer(address recipient, uint withdraw_value, bytes32 passhash);
 
     modifier onlyOwner {
         require(msg.sender == owner);
@@ -37,7 +37,7 @@ contract Remittance {
         Transfer memory newTransfer;
         newTransfer.creator = msg.sender;
         newTransfer.recipient = transferRecipient;
-        newTransfer.amount = msg.value - FEE;
+        newTransfer.amount = msg.value;
         newTransfer.deadline = block.number + DURATION;
         bytes32 passhash = keccak256(pass1, pass2);
         pending_transfers[passhash] = newTransfer;
@@ -60,9 +60,10 @@ contract Remittance {
 
         delete pending_transfers[passhash];
 
-        toWithdraw.recipient.transfer(toWithdraw.amount);
+        toWithdraw.recipient.transfer(toWithdraw.amount - FEE);
+        toWithdraw.creator.transfer(FEE);
 
-        LogWithdrawTransfer(msg.sender, toWithdraw.amount, passhash);
+        LogWithdrawTransfer(msg.sender, toWithdraw.amount - FEE , passhash);
 
         return true;
     }
