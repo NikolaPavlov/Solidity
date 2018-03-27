@@ -49,7 +49,8 @@ contract Remittance {
 
     function withdrawFunds(string pass1, string pass2) public returns (bool success) {
         // release the funds if msg.sender == receiver in Transfer in the pending_transfers,
-        // and the hash from pass1+pass2 is found in pending_transfers
+        // and the hash from pass1+pass2 is found in pending_transfers and
+        // deadline not pass.
         bytes32 passhash = keccak256(pass1, pass2);
 
         Transfer memory toWithdraw = pending_transfers[passhash];
@@ -70,13 +71,13 @@ contract Remittance {
 
     function refundTransfer(string pass1, string pass2) public returns (bool success) {
         // If you are the creator of the transfer, you can revert it. It's
-        // require to have pass1 + pass2.
+        // require to have pass1 + pass2, and expired deadline.
         bytes32 passhash = keccak256(pass1, pass2);
 
         Transfer toRefund = pending_transfers[passhash];
 
         require(msg.sender == toRefund.creator);
-        require(block.number <= toRefund.deadline);
+        require(block.number > toRefund.deadline);
 
         delete pending_transfers[passhash];
         msg.sender.transfer(toRefund.amount);

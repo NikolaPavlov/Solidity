@@ -1,6 +1,5 @@
 pragma solidity ^0.4.0;
 
-
 contract Splitter {
     address public owner;
     mapping (address => uint) public balances;
@@ -30,6 +29,7 @@ contract Splitter {
         balances[out2] += msg.value / 2;
 
         log_split(msg.sender, out1, out2, msg.value);
+
         return true;
     }
 
