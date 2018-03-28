@@ -27,10 +27,12 @@ contract Remittance {
         owner = msg.sender;
     }
 
+    // TODO: Need to figure out where to put the FEE!
     function createTransfer(address transferRecipient, string pass1, string pass2) public payable returns (bool success) {
         // Create transfer in pending_transfers.
-        // transferRecipient address is the address of the exchange.
-        // Only transferRecipient address who knows both pass1 and pass2 should be able to withdraw this deposit.
+        // record receipient address
+        // record hash from pass1 + pass2
+        // record the duration (if duration isn't expired, the transfer can be withdraw from receipient)
         require(msg.value > FEE);
         require(transferRecipient != msg.sender);
 
@@ -48,9 +50,10 @@ contract Remittance {
     }
 
     function withdrawFunds(string pass1, string pass2) public returns (bool success) {
-        // release the funds if msg.sender == receiver in Transfer in the pending_transfers,
-        // and the hash from pass1+pass2 is found in pending_transfers and
-        // deadline not pass.
+        // msg.sender can withdraw the funds if:
+        //   - msg.sender == receiver
+        //   - has pass1+pass2
+        //   - deadline isn't expired
         bytes32 passhash = keccak256(pass1, pass2);
 
         Transfer memory toWithdraw = pending_transfers[passhash];
@@ -70,8 +73,10 @@ contract Remittance {
     }
 
     function refundTransfer(string pass1, string pass2) public returns (bool success) {
-        // If you are the creator of the transfer, you can revert it. It's
-        // require to have pass1 + pass2, and expired deadline.
+        // You can revert the transfer if:
+        // - you are the creator (msg.sender = creator of the transfer)
+        // - has the pass1 and pass2
+        // - the deadline is expired
         bytes32 passhash = keccak256(pass1, pass2);
 
         Transfer toRefund = pending_transfers[passhash];
