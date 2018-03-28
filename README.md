@@ -2,17 +2,17 @@ Splitter
 --------
 
 You will create a smart contract named Splitter whereby:
-  * there are 3 people: Alice, Bob and Carol
+  * [x] there are 3 people: Alice, Bob and Carol
   * we can see the balance of the Splitter contract on the web page
-  * whenever Alice sends ether to the contract, half of it goes to Bob and the other half to Carol
-  * we can see the balances of Alice, Bob and Carol on the web page
+  * [x] whenever Alice sends ether to the contract, half of it goes to Bob and the other half to Carol
+  * [x] we can see the balances of Alice, Bob and Carol on the web page
   * we can send ether to it from the web page
 
 It would be even better if you could team up with different people impersonating Alice, Bob and Carol, all cooperating on a test net.
 
 Stretch goals:
-  * add a kill switch to the whole contract
-  * make the contract a utility that can be used by David, Emma and anybody with an address
+  * [x] add a kill switch to the whole contract
+  * [x] make the contract a utility that can be used by David, Emma and anybody with an address
   * cover potentially bad input data
 
 
@@ -36,9 +36,9 @@ Of course, for safety, no one should send their passwords to the blockchain in t
 
 Stretch goals:
 
-  * add a deadline, after which Alice can claim back the unchallenged Ether
+  * [x] add a deadline, after which Alice can claim back the unchallenged Ether
   * add a limit to how far in the future the deadline can be
-  * add a kill switch to the whole contract
+  * [x] add a kill switch to the whole contract
   * plug a security hole (which one?) by changing one password to the recipient's address
-  * make the contract a utility that can be used by David, Emma and anybody with an address
+  * [x] make the contract a utility that can be used by David, Emma and anybody with an address
   * make you, the owner of the contract, take a cut of the Ethers smaller than what it would cost Alice to deploy the same contract herself
