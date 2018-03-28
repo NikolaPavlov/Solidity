@@ -3,8 +3,8 @@ pragma solidity ^0.4.0;
 
 contract Remittance {
     address public owner;
-    uint public FEE = 1;
-    uint public DURATION = 1000;
+    uint public FEE = 1; // need to specific if its wei
+    uint public DURATION = 1000; // in block numbers
 
     mapping(bytes32 => Transfer) private pending_transfers;
 
@@ -17,6 +17,7 @@ contract Remittance {
 
     event LogCreateTransfer(address creator, address recipient, uint value, bytes32 passhash);
     event LogWithdrawTransfer(address recipient, uint withdraw_value, bytes32 passhash);
+    // TODO: event LogDespositReceived
 
     modifier onlyOwner {
         require(msg.sender == owner);
@@ -27,10 +28,12 @@ contract Remittance {
         owner = msg.sender;
     }
 
+    function () payable { LogDespositReceived(msg.sender, msg.value); }
+
     // TODO: Need to figure out where to put the FEE!
     function createTransfer(address transferRecipient, string pass1, string pass2) public payable returns (bool success) {
         // Create transfer in pending_transfers.
-        // record receipient address
+        // record receipient address (msg.sender != receipient)
         // record hash from pass1 + pass2
         // record the duration (if duration isn't expired, the transfer can be withdraw from receipient)
         require(msg.value > FEE);
@@ -64,6 +67,8 @@ contract Remittance {
 
         delete pending_transfers[passhash];
 
+        // 2300 gas
+        // x.transfer(y) will revert if the send fails
         toWithdraw.recipient.transfer(toWithdraw.amount - FEE);
         toWithdraw.creator.transfer(FEE);
 
@@ -74,9 +79,9 @@ contract Remittance {
 
     function refundTransfer(string pass1, string pass2) public returns (bool success) {
         // You can revert the transfer if:
-        // - you are the creator (msg.sender = creator of the transfer)
         // - has the pass1 and pass2
-        // - the deadline is expired
+        // - you are the creator (msg.sender = creator of the transfer)
+        // - the deadline is expired and the transfer isn't withdraw already
         bytes32 passhash = keccak256(pass1, pass2);
 
         Transfer toRefund = pending_transfers[passhash];
@@ -90,7 +95,19 @@ contract Remittance {
         return true;
     }
 
+    function checkBalanceOf(address addr) returns (uint) {
+        return addr.balance;
+    }
+
+    function checkContractBalance() returns (uint) {
+        return this.balance;
+    }
+
     function kill_the_contract() onlyOwner {
         suicide(owner);
     }
+
+    //TODO: best practices
+    // add pause the contract
+    // add update(upgrade) mechanism
 }
