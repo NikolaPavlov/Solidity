@@ -1,12 +1,10 @@
 // var assert = require('mocha');
-var chai = require('chai');
-var assert = chai.assert;
+var assert = require('chai').assert;
+var Splitter = artifacts.require('./contracts/Splitter.sol');
 
-var foo = 1;
 
-// describe is used for grouping individual tests
-describe('Splitter Test', function () {
-    it('test foo = 1', function() {
-        assert.equal(foo, 1);
-    });
+describe('Testing Outter desc', function() {
+    it('testing forTesting', function() {
+        assert.equal(Splitter.forTesting(), 'gogo');
+    })
 })

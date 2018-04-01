@@ -71,4 +71,8 @@ contract Splitter {
     function killTheContract() onlyOwner {
         suicide(owner);
     }
+
+    function forTesting() returns (string) {
+        return 'gogo';
+    }
 }
