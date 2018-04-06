@@ -3,10 +3,10 @@ pragma solidity ^0.4.0;
 
 contract Remittance {
     address public owner;
-    uint public FEE = 1; // need to specific if its wei
+    uint public FEE = 1; // wei
     uint public DURATION = 1000; // in block numbers
 
-    mapping(bytes32 => Transfer) private pending_transfers;
+    mapping(bytes32 => Transfer) private pendingTransfers;
 
     struct Transfer {
         address creator;
@@ -17,6 +17,7 @@ contract Remittance {
 
     event LogCreateTransfer(address creator, address recipient, uint value, bytes32 passhash);
     event LogWithdrawTransfer(address recipient, uint withdraw_value, bytes32 passhash);
+    event LogSelfDestruct(address sender, uint balance);
     // TODO: event LogDespositReceived
 
     modifier onlyOwner {
@@ -28,28 +29,32 @@ contract Remittance {
         owner = msg.sender;
     }
 
-    function () payable { LogDespositReceived(msg.sender, msg.value); }
+    function () payable {}
 
     // TODO: Need to figure out where to put the FEE!
     function createTransfer(address transferRecipient, string pass1, string pass2) public payable returns (bool success) {
-        // Create transfer in pending_transfers.
+        // Create transfer in pendingTransfers.
         // record receipient address (msg.sender != receipient)
         // record hash from pass1 + pass2
         // record the duration (if duration isn't expired, the transfer can be withdraw from receipient)
         require(msg.value > FEE);
         require(transferRecipient != msg.sender);
-
-        Transfer memory newTransfer;
-        newTransfer.creator = msg.sender;
-        newTransfer.recipient = transferRecipient;
-        newTransfer.amount = msg.value;
-        newTransfer.deadline = block.number + DURATION;
         bytes32 passhash = keccak256(pass1, pass2);
-        pending_transfers[passhash] = newTransfer;
+        // require(pendingTransfers[passhash] == 0);
 
-        LogCreateTransfer(newTransfer.creator, newTransfer.recipient, newTransfer.amount, passhash);
+        // check if the transfer with passhash key exist
+        if (pendingTransfers[passhash].creator == 0) {
+            Transfer memory newTransfer;
+            newTransfer.creator = msg.sender;
+            newTransfer.recipient = transferRecipient;
+            newTransfer.amount = msg.value;
+            newTransfer.deadline = block.number + DURATION;
+            pendingTransfers[passhash] = newTransfer;
 
-        return true;
+            LogCreateTransfer(newTransfer.creator, newTransfer.recipient, newTransfer.amount, passhash);
+            return true;
+        }
+        return false;
     }
 
     function withdrawFunds(string pass1, string pass2) public returns (bool success) {
@@ -59,13 +64,13 @@ contract Remittance {
         //   - deadline isn't expired
         bytes32 passhash = keccak256(pass1, pass2);
 
-        Transfer memory toWithdraw = pending_transfers[passhash];
+        Transfer memory toWithdraw = pendingTransfers[passhash];
 
         require(toWithdraw.amount > 0);
         require(msg.sender == toWithdraw.recipient);
         require(block.number <= toWithdraw.deadline);
 
-        delete pending_transfers[passhash];
+        delete pendingTransfers[passhash];
 
         // 2300 gas
         // x.transfer(y) will revert if the send fails
@@ -84,12 +89,12 @@ contract Remittance {
         // - the deadline is expired and the transfer isn't withdraw already
         bytes32 passhash = keccak256(pass1, pass2);
 
-        Transfer toRefund = pending_transfers[passhash];
+        Transfer toRefund = pendingTransfers[passhash];
 
         require(msg.sender == toRefund.creator);
         require(block.number > toRefund.deadline);
 
-        delete pending_transfers[passhash];
+        delete pendingTransfers[passhash];
         msg.sender.transfer(toRefund.amount);
 
         return true;
@@ -103,8 +108,9 @@ contract Remittance {
         return this.balance;
     }
 
-    function kill_the_contract() onlyOwner {
-        suicide(owner);
+    function killTheContract() onlyOwner public {
+        LogSelfDestruct(msg.sender, this.balance);
+        selfdestruct(owner);
     }
 
     //TODO: best practices
