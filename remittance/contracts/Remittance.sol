@@ -18,7 +18,7 @@ contract Remittance {
     event LogCreateTransfer(address creator, address recipient, uint value, bytes32 passhash);
     event LogWithdrawTransfer(address recipient, uint withdraw_value, bytes32 passhash);
     event LogRefundTransfer(address creator, uint refundValue);
-    event LogSelfDestruct(address sender, uint balance);
+    event LogSelfDestruct(address sender, uint transferedBalance);
     // TODO: event LogDespositReceived
 
     modifier onlyOwner {
@@ -89,16 +89,15 @@ contract Remittance {
         // - you are the creator (msg.sender = creator of the transfer)
         // - the deadline is expired and the transfer isn't withdraw already
         bytes32 passhash = keccak256(pass1, pass2);
-
         Transfer toRefund = pendingTransfers[passhash];
-
         require(msg.sender == toRefund.creator);
-        require(block.number > toRefund.deadline);
+        require(block.number < toRefund.deadline);
 
-        delete pendingTransfers[passhash];
         msg.sender.transfer(toRefund.amount);
 
         LogRefundTransfer(toRefund.creator, toRefund.amount);
+
+        delete pendingTransfers[passhash];
 
         return true;
     }
