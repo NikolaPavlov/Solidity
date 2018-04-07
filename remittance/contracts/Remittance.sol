@@ -26,11 +26,11 @@ contract Remittance {
         _;
     }
 
-    function Remittance() {
+    function Remittance() public {
         owner = msg.sender;
     }
 
-    function () payable {}
+    function () public payable {}
 
     function getDuration() public view returns (uint duration) {
         return DURATION;
@@ -56,7 +56,7 @@ contract Remittance {
             newTransfer.deadline = block.number + DURATION;
             pendingTransfers[passhash] = newTransfer;
 
-            LogCreateTransfer(newTransfer.creator, newTransfer.recipient, newTransfer.amount, passhash);
+            emit LogCreateTransfer(newTransfer.creator, newTransfer.recipient, newTransfer.amount, passhash);
             return true;
         }
         return false;
@@ -82,7 +82,7 @@ contract Remittance {
         toWithdraw.recipient.transfer(toWithdraw.amount - FEE);
         toWithdraw.creator.transfer(FEE);
 
-        LogWithdrawTransfer(msg.sender, toWithdraw.amount - FEE , passhash);
+        emit LogWithdrawTransfer(msg.sender, toWithdraw.amount - FEE , passhash);
 
         return true;
     }
@@ -93,13 +93,13 @@ contract Remittance {
         // - you are the creator (msg.sender = creator of the transfer)
         // - the deadline is expired and the transfer isn't withdraw already
         bytes32 passhash = keccak256(pass1, pass2);
-        Transfer toRefund = pendingTransfers[passhash];
+        Transfer memory toRefund = pendingTransfers[passhash];
         require(msg.sender == toRefund.creator);
         require(block.number > toRefund.deadline);
 
         msg.sender.transfer(toRefund.amount);
 
-        LogRefundTransfer(toRefund.creator, toRefund.amount);
+        emit LogRefundTransfer(toRefund.creator, toRefund.amount);
 
         delete pendingTransfers[passhash];
 
@@ -111,11 +111,11 @@ contract Remittance {
     }
 
     function checkContractBalance() public view returns (uint) {
-        return this.balance;
+        return address(this).balance;
     }
 
     function killTheContract() onlyOwner public {
-        LogSelfDestruct(msg.sender, this.balance);
+        emit LogSelfDestruct(msg.sender, address(this).balance);
         selfdestruct(owner);
     }
 
