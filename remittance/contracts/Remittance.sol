@@ -32,7 +32,7 @@ contract Remittance {
 
     function () payable {}
 
-    function getDuration() returns (uint duration) {
+    function getDuration() public view returns (uint duration) {
         return DURATION;
     }
 
@@ -106,11 +106,11 @@ contract Remittance {
         return true;
     }
 
-    function checkBalanceOf(address addr) returns (uint) {
+    function checkBalanceOf(address addr) public view returns (uint) {
         return addr.balance;
     }
 
-    function checkContractBalance() returns (uint) {
+    function checkContractBalance() public view returns (uint) {
         return this.balance;
     }
 
