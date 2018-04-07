@@ -4,7 +4,7 @@ pragma solidity ^0.4.0;
 contract Remittance {
     address public owner;
     uint public FEE = 1; // wei
-    uint public DURATION = 1000; // in block numbers
+    uint public DURATION = 10; // in block numbers
 
     mapping(bytes32 => Transfer) private pendingTransfers;
 
@@ -31,6 +31,10 @@ contract Remittance {
     }
 
     function () payable {}
+
+    function getDuration() returns (uint duration) {
+        return DURATION;
+    }
 
     // TODO: Need to figure out where to put the FEE!
     function createTransfer(address transferRecipient, string pass1, string pass2) public payable returns (bool success) {
@@ -91,7 +95,7 @@ contract Remittance {
         bytes32 passhash = keccak256(pass1, pass2);
         Transfer toRefund = pendingTransfers[passhash];
         require(msg.sender == toRefund.creator);
-        require(block.number < toRefund.deadline);
+        require(block.number > toRefund.deadline);
 
         msg.sender.transfer(toRefund.amount);
 
