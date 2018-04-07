@@ -17,6 +17,7 @@ contract Remittance {
 
     event LogCreateTransfer(address creator, address recipient, uint value, bytes32 passhash);
     event LogWithdrawTransfer(address recipient, uint withdraw_value, bytes32 passhash);
+    event LogRefundTransfer(address creator, uint refundValue);
     event LogSelfDestruct(address sender, uint balance);
     // TODO: event LogDespositReceived
 
@@ -96,6 +97,8 @@ contract Remittance {
 
         delete pendingTransfers[passhash];
         msg.sender.transfer(toRefund.amount);
+
+        LogRefundTransfer(toRefund.creator, toRefund.amount);
 
         return true;
     }

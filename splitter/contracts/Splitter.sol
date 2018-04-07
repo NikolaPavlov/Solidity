@@ -1,13 +1,15 @@
-pragma solidity ^0.4.0;
+pragma solidity 0.4.19;
 
 contract Splitter {
-    address public owner;
+    // address public owner;
+    address public owner = msg.sender;
     // mapping (address => uint) public balances;
 
-    event log_split(address depostitor, address out1, address out2, uint amount);
+    event LogSplit(address depostitor, address out1, address out2, uint amount);
+    event LogSelfDestruct(address sender, uint amount);
 
     modifier onlyOwner() {
-        require (msg.sender == owner);
+        require(msg.sender == owner);
         _;
     }
 
@@ -15,7 +17,7 @@ contract Splitter {
         owner == msg.sender;
     }
 
-    function () payable { }
+    function () public payable { }
 
     function split(address out1, address out2) public payable returns (bool success) {
         // real transfers on the network
@@ -33,21 +35,21 @@ contract Splitter {
         out1.transfer(msg.value / 2);
         out2.transfer(msg.value / 2);
 
-        log_split(msg.sender, out1, out2, msg.value);
+        LogSplit(msg.sender, out1, out2, msg.value);
 
         return true;
     }
 
-    function checkBalanceOf(address addr) public returns (uint) {
+    function checkBalanceOf(address addr) public view returns (uint) {
         return addr.balance;
     }
 
-    function checkContractBalance() public returns (uint) {
+    function checkContractBalance() public view returns (uint) {
         return this.balance;
     }
 
     function killTheContract() onlyOwner public {
-        // suicide(owner);
+        LogSelfDestruct(msg.sender, this.balance);
         selfdestruct(owner);
     }
 }

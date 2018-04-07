@@ -136,6 +136,7 @@ contract('Remittance', accounts => {
 
 
 
+
     it('owner can kill the contract', async () => {
         let result = await remittance.killTheContract();
         // check if LogSelfDestruct event is fire before selfdestruct()
