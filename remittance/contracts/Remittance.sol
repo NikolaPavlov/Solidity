@@ -4,7 +4,8 @@ pragma solidity ^0.4.21;
 contract Remittance {
     address public owner;
     uint public FEE = 100; // wei
-    uint public DURATION = 100000; // in block numbers
+    uint public constant MAXDURATION = 1000000; // in block numbers
+    uint public duration; // in block numbers
 
     mapping(bytes32 => Transfer) private pendingTransfers;
 
@@ -25,15 +26,16 @@ contract Remittance {
         _;
     }
 
-    function Remittance() public {
+    function Remittance(uint256 _duration) public {
         owner = msg.sender;
+        require(_duration < MAXDURATION);
+        duration = _duration;
+        if (_duration == 0) {
+            duration = MAXDURATION;
+        }
     }
 
     function () public payable {}
-
-    function getDuration() public view returns (uint duration) {
-        return DURATION;
-    }
 
     // TODO: Need to figure out where to put the FEE! The task description isn't clear.
     function createTransfer(address transferRecipient, string pass1, string pass2) public payable returns (bool success) {
@@ -51,7 +53,7 @@ contract Remittance {
             newTransfer.creator = msg.sender;
             newTransfer.recipient = transferRecipient;
             newTransfer.amount = msg.value;
-            newTransfer.deadline = block.number + DURATION;
+            newTransfer.deadline = block.number + duration;
             pendingTransfers[passhash] = newTransfer;
 
             emit LogCreateTransfer(newTransfer.creator, newTransfer.recipient, newTransfer.amount, passhash);
