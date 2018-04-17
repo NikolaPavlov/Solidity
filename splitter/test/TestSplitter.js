@@ -95,15 +95,4 @@ contract('Splitter async', accounts => {
         }
     });
 
-
-    // TODO:
-        // successfully split transaction with odd amount, 1 return to sender
-        // can't perform split with 0 value transaction
-        // can't perform split with empty value in transaction
-    // can't perform split with one missing address
-    // can't perform split with two missing address
-        // can't perform split if one of the output accounts is the sender account
-        // only owner can kill the contract
-        // other users can't kill the contract
-
 })

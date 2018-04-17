@@ -2,8 +2,7 @@ pragma solidity ^0.4.21;
 
 contract Splitter {
     // address public owner;
-    address public owner = msg.sender;
-    // mapping (address => uint) public balances;
+    address public owner;
 
     event LogSplit(address depostitor, address out1, address out2, uint amount);
     event LogSelfDestruct(address sender, uint amount);
@@ -14,7 +13,7 @@ contract Splitter {
     }
 
     function Splitter () public {
-        owner == msg.sender;
+        owner = msg.sender;
     }
 
     function () public payable { }
@@ -35,7 +34,7 @@ contract Splitter {
         out1.transfer(msg.value / 2);
         out2.transfer(msg.value / 2);
 
-        LogSplit(msg.sender, out1, out2, msg.value);
+        emit LogSplit(msg.sender, out1, out2, msg.value);
 
         return true;
     }
@@ -45,11 +44,11 @@ contract Splitter {
     }
 
     function checkContractBalance() public view returns (uint) {
-        return this.balance;
+        return address(this).balance;
     }
 
     function killTheContract() onlyOwner public {
-        LogSelfDestruct(msg.sender, this.balance);
+        emit LogSelfDestruct(msg.sender, address(this).balance);
         selfdestruct(owner);
     }
 }
