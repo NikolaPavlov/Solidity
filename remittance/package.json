@@ -1,0 +1,18 @@
+{
+  "name": "remittance",
+  "version": "1.0.0",
+  "description": "Remittance: 0x22143681ccde8ab15fca7d0a645e8729a2f31cb6",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.1.0"
+  }
+}

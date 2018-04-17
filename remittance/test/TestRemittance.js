@@ -4,11 +4,15 @@ var assert = require('chai').assert;
 
 contract('Remittance', accounts => {
     let remittance;
-    let duration = 1000; // blocks
+    let duration = 10; // blocks
     let pass1 = 'pass1';
     let pass2 = 'pass2';
     let wrongPass1 = 'wrongpass1';
     let wrongPass2 = 'wrongpass2';
+    let amount = 1000; // wei
+    let creatorAcc = accounts[0];
+    let notCreatorAcc = accounts[3];
+    let recivingAcc = accounts[1];
 
 
     // const increaseTime = addSeconds => {
@@ -28,11 +32,9 @@ contract('Remittance', accounts => {
         })
     }
 
-
     beforeEach('should deploy a new Splitter contract', async () => {
         remittance = await Remittance.new(duration, { from: accounts[0] });
-        // tempTransfer = await remittance.createTransfer(accounts[2], pass1, pass2, {value: 1000});
-    })
+    });
 
 
     it('starting balance of the contract should be 0', async () => {
@@ -42,13 +44,13 @@ contract('Remittance', accounts => {
 
 
     it('successfully log correct transfer', async () => {
-        let result = await remittance.createTransfer(accounts[1], pass1, pass2, { value: 1000 });
+        let result = await remittance.createTransfer(accounts[1], pass1, pass2, { value: amount });
         assert.equal(result.logs[0].event, 'LogCreateTransfer');
     });
 
 
     it('successfully create transfer', async () => {
-        let result = await remittance.createTransfer.call(accounts[1], pass1, pass2, { value: 1000 });
+        let result = await remittance.createTransfer.call(accounts[1], pass1, pass2, { value: amount });
         assert.isTrue(result, 'transfer should return true but instead return false');
     });
 
@@ -98,15 +100,18 @@ contract('Remittance', accounts => {
     });
 
 
-    // it('can withdraw funds with correct passwords from the correct address', async () => {
-    //     let amount = 1000;
-    //     // pass
-    // });
+    it('can withdraw funds with correct passwords from the correct address', async () => {
+        // 1. Create the transfer
+        await  remittance.createTransfer(recivingAcc, pass1, pass2, { from: creatorAcc, value: amount });
+        // 2. The recipient withdraw the transfer
+        result = await remittance.withdrawFunds.call(pass1, pass2, { from: recivingAcc });
+        assert.isTrue(result, 'the transfer withdraw fail with correct inputs');
+    });
 
 
     it('can\'t withdraw funds with empty passwords from the correct address', async () => {
         try {
-            await remittance.createTransfer(accounts[1], pass1, pass2, { value: 1000 });
+            await remittance.createTransfer(accounts[1], pass1, pass2, { value: amount });
             let result = await remittance.withdrawFunds.call('', '', { from: accounts[1] });
             assert.fail(result, true, 'can\'t withdraw successfully with empty passwords');
         }
@@ -118,7 +123,7 @@ contract('Remittance', accounts => {
 
     it('can\'t withdraw funds with wrong passwords from the correct address', async () => {
         try {
-            await remittance.createTransfer(accounts[1], pass1, pass2, { value: 1000 });
+            await remittance.createTransfer(accounts[1], pass1, pass2, { value: amount });
             let result = await remittance.withdrawFunds.call(wrongPass1, wrongPass2, { from: accounts[1] });
             assert.fail(result, true, 'can\'t withdraw successfully with wrong passwords');
         }
@@ -130,7 +135,7 @@ contract('Remittance', accounts => {
 
     it('can\'t withdraw funds with correct passwords from another address', async () => {
         try {
-            await remittance.createTransfer(accounts[1], pass1, pass2, { value: 1000 });
+            await remittance.createTransfer(accounts[1], pass1, pass2, { value: amount });
             let result = await remittance.withdrawFunds.call(pass1, pass2, { from: accounts[3] });
             assert.fail(result, true, 'can withdraw successfully from wrong address');
         }
@@ -140,47 +145,25 @@ contract('Remittance', accounts => {
     });
 
 
-    // TODO: need fixes balances isn't right
-    // it('can revert funds with correct passwords from correct address when deadline is expired', async () => {
-    //     let amount = 10000000000000000000 // 10 eth in wei
-    //     let creatorAcc = accounts[0];
-    //
-    //     // console.log('------------------------------------------');
-    //     // console.log(web3.eth.blockNumber);
-    //     // console.log('------------------------------------------');
-    //
-    //     // create the transfer
-    //     await remittance.createTransfer(accounts[1], pass1, pass2, { from: creatorAcc, value: amount });
-    //
-    //     // mine [DURATION] numbers of blocks
-    //     let DURATION = await remittance.getDuration.call();
-    //     for (var i = 0, len = DURATION; i < len; i++) {
-    //         mineOneBlock();
-    //     }
-    //
-    //     // console.log('------------------------------------------');
-    //     // console.log(web3.eth.blockNumber);
-    //     // console.log('------------------------------------------');
-    //
-    //
-    //     // let balanceCreatorBeforeTransfer = await remittance.checkBalanceOf.call(creatorAcc)
-    //     // console.log(balanceCreatorBeforeTransfer.toNumber());
-    //     // console.log('before       :' + balanceCreatorBeforeTransfer);
-    //
-    //     // let balanceCreatorAfterTransfer = await remittance.checkBalanceOf.call(creatorAcc)
-    //     // console.log('after        :' + balanceCreatorBeforeTransfer);
-    //
-    //     result = await remittance.refundTransfer.call(pass1, pass2, { from: creatorAcc } );
-    //     // let balanceCreatorAfterRevert = await remittance.checkBalanceOf.call(creatorAcc)
-    //     // console.log('after revert :' + balanceCreatorAfterRevert);
-    //     assert.isTrue(result, 'funds can\'t be reverted');
-    // });
+    // TODO: need fixes
+    it('can revert funds with correct passwords from correct address when deadline is expired', async () => {
+        // create the transfer
+        result1 = await remittance.createTransfer.call(recivingAcc, pass1, pass2, { from: creatorAcc, value: amount });
+        assert.isTrue(result1, 'create transfer with correct input fail');
+
+        console.log('start mining on:' + web3.eth.blockNumber);
+        // mine [DURATION] numbers of blocks
+        for (var i = 0, len = duration+1; i < len; i++) {
+            mineOneBlock();
+        }
+        console.log('end mining on:' + web3.eth.blockNumber);
+
+        result = await remittance.refundTransfer.call(pass1, pass2, { from: creatorAcc });
+        assert.isTrue(result, 'can\'t revert with correct input');
+    });
 
 
     it('can\'t revert funds with correct passwords from correct address when deadline isn\'t expired', async () => {
-        let amount = 10000000000000000000 // 10 eth in wei
-        let creatorAcc = accounts[0];
-
         await remittance.createTransfer(accounts[1], pass1, pass2, { from: creatorAcc, value: amount });
         try {
             result = await remittance.refundTransfer.call(pass1, pass2, { from: creatorAcc } );
@@ -192,9 +175,6 @@ contract('Remittance', accounts => {
 
 
     it('other addresses than creator address can\'t refund transfer with correct passwords', async () => {
-        let amount = 10000000000000000000 // 10 eth in wei
-        let creatorAcc = accounts[0];
-        let notCreatorAcc = accounts[3];
 
         try {
             await remittance.createTransfer(accounts[1], pass1, pass2, { from: creatorAcc, value: amount });
@@ -207,13 +187,9 @@ contract('Remittance', accounts => {
 
 
     it('creator address can\'t refund transfer with wrong passwords', async () => {
-        let amount = 10000000000000000000 // 10 eth in wei
-        let creatorAcc = accounts[0];
-        let wrongPass = 'pass11'
-
         try {
             await remittance.createTransfer(accounts[1], pass1, pass2, { from: creatorAcc, value: amount });
-            result = await remittance.refundTransfer.call(wrongPass, pass2, { from: creatorAcc } );
+            result = await remittance.refundTransfer.call(wrongPass1, pass2, { from: creatorAcc } );
         }
         catch(err) {
             assert.include(err.message, 'revert');

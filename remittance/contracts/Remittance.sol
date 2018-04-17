@@ -119,6 +119,10 @@ contract Remittance {
         selfdestruct(owner);
     }
 
+    function getDuration() public view returns(uint256) {
+        return duration;
+    }
+
     //TODO: best practices
     // add pause the contract
     // add update(upgrade) mechanism
