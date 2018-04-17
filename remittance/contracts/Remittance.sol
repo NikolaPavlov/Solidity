@@ -1,10 +1,10 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.21;
 
 
 contract Remittance {
     address public owner;
-    uint public FEE = 1; // wei
-    uint public DURATION = 10; // in block numbers
+    uint public FEE = 100; // wei
+    uint public DURATION = 100000; // in block numbers
 
     mapping(bytes32 => Transfer) private pendingTransfers;
 
@@ -19,7 +19,6 @@ contract Remittance {
     event LogWithdrawTransfer(address recipient, uint withdraw_value, bytes32 passhash);
     event LogRefundTransfer(address creator, uint refundValue);
     event LogSelfDestruct(address sender, uint transferedBalance);
-    // TODO: event LogDespositReceived
 
     modifier onlyOwner {
         require(msg.sender == owner);
@@ -36,16 +35,15 @@ contract Remittance {
         return DURATION;
     }
 
-    // TODO: Need to figure out where to put the FEE!
+    // TODO: Need to figure out where to put the FEE! The task description isn't clear.
     function createTransfer(address transferRecipient, string pass1, string pass2) public payable returns (bool success) {
         // Create transfer in pendingTransfers.
-        // record receipient address (msg.sender != receipient)
+        // record receipient address
         // record hash from pass1 + pass2
         // record the duration (if duration isn't expired, the transfer can be withdraw from receipient)
         require(msg.value > FEE);
         require(transferRecipient != msg.sender);
         bytes32 passhash = keccak256(pass1, pass2);
-        // require(pendingTransfers[passhash] == 0);
 
         // check if the transfer with passhash key exist
         if (pendingTransfers[passhash].creator == 0) {

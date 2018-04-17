@@ -1,3 +1,7 @@
+## Address Ropsten Network:
+Remittance: 0xC13874E29DE18B451adb8768D16703ed4dF18298
+
+
 REMITTANCE
 ------------
 You will create a smart contract named Remittance whereby:
@@ -19,6 +23,6 @@ Stretch goals:
   * [x] add a deadline, after which Alice can claim back the unchallenged Ether
   * add a limit to how far in the future the deadline can be
   * [x] add a kill switch to the whole contract
-  * plug a security hole (which one?) by changing one password to the recipient's address
+  * [?]plug a security hole (which one?) by changing one password to the recipient's address
   * [x] make the contract a utility that can be used by David, Emma and anybody with an address
-  * make you, the owner of the contract, take a cut of the Ethers smaller than what it would cost Alice to deploy the same contract herself
+  * [?]make you, the owner of the contract, take a cut of the Ethers smaller than what it would cost Alice to deploy the same contract herself
