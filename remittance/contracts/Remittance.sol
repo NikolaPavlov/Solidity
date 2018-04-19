@@ -3,48 +3,47 @@ pragma solidity ^0.4.21;
 
 contract Remittance {
     address public owner;
-    uint public FEE = 100; // wei
-    uint public constant MAXDURATION = 1000000; // in block numbers
-    uint public duration; // in block numbers
+    uint256 public FEE = 100; // wei
+    uint256 public constant MAXDURATION = 1000000; // in block numbers
 
     mapping(bytes32 => Transfer) private pendingTransfers;
 
     struct Transfer {
         address creator;
         address recipient;
-        uint amount;
-        uint deadline;
+        uint256 amount;
+        uint256 deadline;
     }
 
-    event LogCreateTransfer(address creator, address recipient, uint value, bytes32 passhash);
-    event LogWithdrawTransfer(address recipient, uint withdraw_value, bytes32 passhash);
-    event LogRefundTransfer(address creator, uint refundValue);
-    event LogSelfDestruct(address sender, uint transferedBalance);
+    event LogCreateTransfer(address creator, address recipient, uint256 value, bytes32 passhash);
+    event LogWithdrawTransfer(address recipient, uint256 withdraw_value, bytes32 passhash);
+    event LogRefundTransfer(address creator, uint256 refundValue);
+    event LogSelfDestruct(address sender, uint256 transferedBalance);
 
     modifier onlyOwner {
         require(msg.sender == owner);
         _;
     }
 
-    function Remittance(uint256 _duration) public {
+    function Remittance() public {
         owner = msg.sender;
-        require(_duration < MAXDURATION);
-        duration = _duration;
-        if (_duration == 0) {
-            duration = MAXDURATION;
-        }
     }
 
     function () public payable {}
 
-    // TODO: Need to figure out where to put the FEE! The task description isn't clear.
-    function createTransfer(address transferRecipient, string pass1, string pass2) public payable returns (bool success) {
+    function createTransfer (
+        address transferRecipient,
+        string pass1,
+        string pass2,
+        uint256 duration
+    ) public payable returns (bool success) {
         // Create transfer in pendingTransfers.
         // record receipient address
         // record hash from pass1 + pass2
         // record the duration (if duration isn't expired, the transfer can be withdraw from receipient)
         require(msg.value > FEE);
         require(transferRecipient != msg.sender);
+        require(duration <= MAXDURATION);
         bytes32 passhash = keccak256(pass1, pass2);
 
         // check if the transfer with passhash key exist
@@ -62,6 +61,7 @@ contract Remittance {
         return false;
     }
 
+    // TODO: Need to figure out where to put the FEE! The task description isn't clear.
     function withdrawFunds(string pass1, string pass2) public returns (bool success) {
         // msg.sender can withdraw the funds if:
         //   - msg.sender == receiver
@@ -106,11 +106,11 @@ contract Remittance {
         return true;
     }
 
-    function checkBalanceOf(address addr) public view returns (uint) {
+    function checkBalanceOf(address addr) public view returns (uint256) {
         return addr.balance;
     }
 
-    function checkContractBalance() public view returns (uint) {
+    function checkContractBalance() public view returns (uint256) {
         return address(this).balance;
     }
 
@@ -119,9 +119,6 @@ contract Remittance {
         selfdestruct(owner);
     }
 
-    function getDuration() public view returns(uint256) {
-        return duration;
-    }
 
     //TODO: best practices
     // add pause the contract
