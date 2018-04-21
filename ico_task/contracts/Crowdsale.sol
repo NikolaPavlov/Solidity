@@ -70,7 +70,7 @@ contract Crowdsale {
    * @dev low level token purchase ***DO NOT OVERRIDE***
    * @param _beneficiary Address performing the token purchase
    */
-  function buyTokens(address _beneficiary) public payable {
+  function buyTokens(address _beneficiary) public payable returns (bool ok) {
 
     uint256 weiAmount = msg.value;
     _preValidatePurchase(_beneficiary, weiAmount);
@@ -93,6 +93,7 @@ contract Crowdsale {
 
     _forwardFunds();
     _postValidatePurchase(_beneficiary, weiAmount);
+    return true;
   }
 
   // -----------------------------------------

@@ -45,20 +45,17 @@ contract Remittance {
         require(transferRecipient != msg.sender);
         require(duration <= MAXDURATION);
         bytes32 passhash = keccak256(pass1, pass2);
+        require(pendingTransfers[passhash].creator == 0);
 
-        // check if the transfer with passhash key exist
-        if (pendingTransfers[passhash].creator == 0) {
-            Transfer memory newTransfer;
-            newTransfer.creator = msg.sender;
-            newTransfer.recipient = transferRecipient;
-            newTransfer.amount = msg.value;
-            newTransfer.deadline = block.number + duration;
-            pendingTransfers[passhash] = newTransfer;
+        Transfer memory newTransfer;
+        newTransfer.creator = msg.sender;
+        newTransfer.recipient = transferRecipient;
+        newTransfer.amount = msg.value;
+        newTransfer.deadline = block.number + duration;
+        pendingTransfers[passhash] = newTransfer;
 
-            emit LogCreateTransfer(newTransfer.creator, newTransfer.recipient, newTransfer.amount, passhash);
-            return true;
-        }
-        return false;
+        emit LogCreateTransfer(newTransfer.creator, newTransfer.recipient, newTransfer.amount, passhash);
+        return true;
     }
 
     // TODO: Need to figure out where to put the FEE! The task description isn't clear.
