@@ -116,8 +116,4 @@ contract Remittance {
         selfdestruct(owner);
     }
 
-
-    //TODO: best practices
-    // add pause the contract
-    // add update(upgrade) mechanism
 }

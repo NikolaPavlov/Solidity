@@ -45,6 +45,7 @@ contract LimeCoinCrowdsale is TimedCrowdsale, MintedCrowdsale, PostDeliveryCrowd
         return block.timestamp;
     }
 
+    // TODO: refactoring for better readability
     // return current rate accordint to preIco and prepreICO requirements
     function getCurrentRate() public view returns (uint256) {
         if (!isStarted()) {
@@ -53,7 +54,7 @@ contract LimeCoinCrowdsale is TimedCrowdsale, MintedCrowdsale, PostDeliveryCrowd
 
         // last 16days 1ETH=100LET;
         if (block.timestamp > openingTime + fourteenDays) {
-            return rate; // start rate
+            return rate; // default rate
         }
 
         if (block.timestamp > openingTime + sevenDays) {
@@ -73,7 +74,7 @@ contract LimeCoinCrowdsale is TimedCrowdsale, MintedCrowdsale, PostDeliveryCrowd
         return rate.mul(5);
     }
 
-    // override for impiment the preIco and prepreICO rates
+    // override parent for impiment the preIco and prepreICO rates
     function _getTokenAmount(uint256 _weiAmount) internal view returns (uint256) {
         uint256 currentRate = getCurrentRate();
         return currentRate.mul(_weiAmount);

@@ -1,7 +1,6 @@
 pragma solidity ^0.4.21;
 
 contract Splitter {
-    // address public owner;
     address public owner;
 
     event LogSplit(address depostitor, address out1, address out2, uint amount);
@@ -19,7 +18,6 @@ contract Splitter {
     function () public payable { }
 
     function split(address out1, address out2) public payable returns (bool success) {
-        // real transfers on the network
         require(msg.value > 0);
         require(out1 != 0);
         require(out2 != 0);
