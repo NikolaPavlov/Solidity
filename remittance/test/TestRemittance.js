@@ -100,14 +100,14 @@ contract('Remittance', accounts => {
             await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {value: amount}).should.be.fulfilled;
             mineOneBlock();
             mineOneBlock();
-            await this.remittance.refundTransfer.call(pass1, pass2, {from: creatorAcc}).should.be.fulfilled;
+            await this.remittance.refundTransfer.call(pass1, pass2, recivingAcc, {from: creatorAcc}).should.be.fulfilled;
         });
 
 
         it('can\'t revert funds with correct passwords from correct address when deadline isn\'t expired', async function () {
             await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {value: amount}).should.be.fulfilled;
             mineOneBlock();
-            await this.remittance.refundTransfer(pass1, pass2, {from: creatorAcc}).should.be.rejectedWith('revert');
+            await this.remittance.refundTransfer(pass1, pass2, recivingAcc, {from: creatorAcc}).should.be.rejectedWith('revert');
         });
 
 
@@ -115,7 +115,7 @@ contract('Remittance', accounts => {
             await this.remittance.createTransfer.call(recivingAcc, pass1, pass2, duration, {from:creatorAcc, value: amount}).should.be.fulfilled;
             mineOneBlock();
             mineOneBlock();
-            await this.remittance.refundTransfer.call(pass1, pass2, {from: randomAcc}).should.be.rejectedWith('revert');
+            await this.remittance.refundTransfer.call(pass1, pass2, recivingAcc, {from: randomAcc}).should.be.rejectedWith('revert');
         });
 
 
@@ -123,7 +123,7 @@ contract('Remittance', accounts => {
             await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {from: creatorAcc, value: amount}).should.be.fulfilled;
             mineOneBlock();
             mineOneBlock();
-            await this.remittance.refundTransfer.call(wrongPass1, wrongPass2, {from: creatorAcc} ).should.be.rejectedWith('revert');
+            await this.remittance.refundTransfer.call(wrongPass1, wrongPass2, recivingAcc, {from: creatorAcc} ).should.be.rejectedWith('revert');
         });
     });
 

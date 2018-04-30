@@ -3,20 +3,20 @@ pragma solidity ^0.4.21;
 
 contract Remittance {
     address public owner;
-    uint256 public FEE = 100; // wei
+    uint256 public constant FEE = 100; // wei
     uint256 public constant MAXDURATION = 1000000; // in block numbers
 
-    mapping(bytes32 => Transfer) private pendingTransfers;
+    mapping(bytes32 => Transfer) public pendingTransfers;
 
     struct Transfer {
-        address creator;
-        address recipient;
+        address creator; //
+        address recipient; //
         uint256 amount;
-        uint256 deadline;
+        uint256 deadline; // in blocks?
     }
 
     event LogCreateTransfer(address creator, address recipient, uint256 value, bytes32 passhash);
-    event LogWithdrawTransfer(address recipient, uint256 withdraw_value, bytes32 passhash);
+    event LogWithdrawTransfer(address recipient, uint256 withdrawValue, bytes32 passhash);
     event LogRefundTransfer(address creator, uint256 refundValue);
     event LogSelfDestruct(address sender, uint256 transferedBalance);
 
@@ -32,26 +32,23 @@ contract Remittance {
     function () public payable {}
 
     function createTransfer (
-        address transferRecipient,
-        string pass1,
-        string pass2,
-        uint256 duration
+        address _transferRecipient,
+        string _pass1hash,
+        string _pass2hash,
+        uint256 _duration
     ) public payable returns (bool success) {
-        // Create transfer in pendingTransfers.
-        // record receipient address
-        // record hash from pass1 + pass2
-        // record the duration (if duration isn't expired, the transfer can be withdraw from receipient)
         require(msg.value > FEE);
-        require(transferRecipient != msg.sender);
-        require(duration <= MAXDURATION);
-        bytes32 passhash = keccak256(pass1, pass2);
+        require(_transferRecipient != msg.sender);
+        require(_duration <= MAXDURATION);
+        require(_duration != 0);
+        bytes32 passhash = keccak256(_pass1hash, _pass2hash, _transferRecipient);
         require(pendingTransfers[passhash].creator == 0);
 
         Transfer memory newTransfer;
         newTransfer.creator = msg.sender;
-        newTransfer.recipient = transferRecipient;
+        newTransfer.recipient = _transferRecipient;
         newTransfer.amount = msg.value;
-        newTransfer.deadline = block.number + duration;
+        newTransfer.deadline = block.number + _duration;
         pendingTransfers[passhash] = newTransfer;
 
         emit LogCreateTransfer(newTransfer.creator, newTransfer.recipient, newTransfer.amount, passhash);
@@ -59,12 +56,12 @@ contract Remittance {
     }
 
     // TODO: Need to figure out where to put the FEE! The task description isn't clear.
-    function withdrawFunds(string pass1, string pass2) public returns (bool success) {
+    function withdrawFunds(string _pass1, string _pass2) public returns (bool success) {
         // msg.sender can withdraw the funds if:
         //   - msg.sender == receiver
-        //   - has pass1+pass2
+        //   - has _pass1+_pass2
         //   - deadline isn't expired
-        bytes32 passhash = keccak256(pass1, pass2);
+        bytes32 passhash = keccak256(_pass1, _pass2, msg.sender);
 
         Transfer memory toWithdraw = pendingTransfers[passhash];
 
@@ -84,12 +81,12 @@ contract Remittance {
         return true;
     }
 
-    function refundTransfer(string pass1, string pass2) public returns (bool success) {
+    function refundTransfer(string _pass1, string _pass2, address _transferRecipient) public returns (bool success) {
         // You can revert the transfer if:
-        // - has the pass1 and pass2
+        // - has the _pass1 and _pass2
         // - you are the creator (msg.sender = creator of the transfer)
         // - the deadline is expired and the transfer isn't withdraw already
-        bytes32 passhash = keccak256(pass1, pass2);
+        bytes32 passhash = keccak256(_pass1, _pass2, _transferRecipient);
         Transfer memory toRefund = pendingTransfers[passhash];
         require(msg.sender == toRefund.creator);
         require(block.number > toRefund.deadline);

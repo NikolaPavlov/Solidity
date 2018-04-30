@@ -40,10 +40,9 @@ contract('Splitter async', accounts => {
 
             let halfValue = new BigNumber(evenValue / 2);
             acc1BalanceAfter.should.be.bignumber.equal(acc1BalanceBefore.plus(halfValue));
-        })
+        });
 
 
-        // TODO: fix need to check for 1 wei return to sender
         it('successfully split transaction with odd incoming amount', async function () {
             let acc1BalanceBefore = web3.eth.getBalance(outputAcc1);
             let acc2BalanceBefore = web3.eth.getBalance(outputAcc2);
@@ -54,36 +53,44 @@ contract('Splitter async', accounts => {
             let acc2BalanceAfter = web3.eth.getBalance(outputAcc2);
 
             let halfValue = new BigNumber(evenValue / 2);
-            acc1BalanceAfter.should.be.bignumber.equal(acc1BalanceBefore.plus(halfValue));
-        })
+            acc1BalanceAfter.should.be.bignumber.equal(acc1BalanceBefore.plus(halfValue).plus(1));
+            acc2BalanceAfter.should.be.bignumber.equal(acc2BalanceBefore.plus(halfValue));
+        });
+
+
+        it('test for emitting Split when split is call with right inputs', async function () {
+            let result = await this.splitter.split(outputAcc1, outputAcc2, { from: creator, value: evenValue });
+            assert.equal(result.logs[0].event, 'Split');
+        });
     });
 
 
     describe('test split with incorect inputs', function () {
         it('should not allow split with 0 value in the transaction', async function () {
             await this.splitter.split(outputAcc1, outputAcc2, { value: 0 }).should.be.rejectedWith('revert');
-        })
-
-
-        it('should not allow split with empty value in the transaction', async function () {
-            await this.splitter.split(outputAcc1, outputAcc2).should.be.rejectedWith('revert');
-        })
+        });
 
 
         it('should not allow split with sender account is one of the output accounts', async function () {
             await this.splitter.split(senderAcc, outputAcc2, {value: evenValue, from: senderAcc}).should.be.rejectedWith('revert');
-        })
+        });
 
 
         it('should not allow split to same output addresses', async function () {
             await this.splitter.split(outputAcc1, outputAcc1, {value: evenValue, from: senderAcc}).should.be.rejectedWith('revert');
-        })
+        });
 
 
-        it('should not allow split when one of the two ouput addresses is missing', async function () {
+        it('should not allow split when first ouput addresses is missing', async function () {
+            errMsg = 'Invalid number of arguments to Solidity function';
+            await this.splitter.split(outputAcc2, {value: evenValue, from: senderAcc}).should.be.rejectedWith(errMsg);
+        });
+
+
+        it('should not allow split when second ouput addresses is missing', async function () {
             errMsg = 'Invalid number of arguments to Solidity function';
             await this.splitter.split(outputAcc1, {value: evenValue, from: senderAcc}).should.be.rejectedWith(errMsg);
-        })
+        });
     });
 
 
