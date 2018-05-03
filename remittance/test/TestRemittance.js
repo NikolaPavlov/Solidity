@@ -1,3 +1,8 @@
+import ether from './helpers/ether';
+import { advanceBlock } from './helpers/advanceToBlock';
+
+const web3 = require('web3');
+
 const BigNumber = web3.BigNumber;
 require('chai')
   .use(require('chai-as-promised'))
@@ -6,24 +11,16 @@ require('chai')
 
 const Remittance = artifacts.require('./Remittance.sol');
 
-const mineOneBlock = async () => {
-    await web3.currentProvider.send({
-        jsonrpc: '2.0',
-        method: 'evm_mine',
-        params: [],
-        id: 0,
-    })
-}
-
 
 contract('Remittance', accounts => {
     const pass1 = 'pass1';
     const pass2 = 'pass2';
+    const passHash = web3.utils.soliditySha3(pass1, pass2);
     const wrongPass1 = 'wrongpass1';
     const wrongPass2 = 'wrongpass2';
     const duration = 2; // blocks
-    const overDuration = 3;
-    const amount = 1000; // wei
+    const overDuration = Remittance.MAXDURATION + 1;
+    const amount = ether(11);
     const creatorAcc = accounts[0];
     const recivingAcc = accounts[1];
     const randomAcc = accounts[3];
@@ -34,96 +31,87 @@ contract('Remittance', accounts => {
 
 
     describe('create transfer with correct input data', function () {
-        it('starting balance of the contract should be 0', async function () {
-            let balance = await this.remittance.checkContractBalance();
-            assert.equal(balance.toNumber(), 0, 'starting balance is not 0');
-        });
-
-
         it('successfully create transfer with correct data', async function () {
-            await this.remittance.createTransfer.call(recivingAcc, pass1, pass2, duration, {value: amount}).should.be.fulfilled;
+            await this.remittance.createTransfer.call(recivingAcc, passHash, duration, {value: amount}).should.be.fulfilled;
         });
     });
 
 
     describe('can\'t create transfer with wrong input data', function () {
         it('can\'t create transfer with zero value eth', async function () {
-            await this.remittance.createTransfer.call(recivingAcc, pass1, pass2, duration, {value: 0}).should.be.rejectedWith('revert');
-        });
-
-
-        it('can\'t create transfer with empty value eth', async function () {
-            await this.remittance.createTransfer.call(recivingAcc, pass1, pass2, duration).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer.call(recivingAcc, passHash, duration, {value: 0}).should.be.rejectedWith('revert');
         });
 
 
         it('can\'t create transfer with recipient same as creator of the transfer', async function () {
-            await this.remittance.createTransfer.call(creatorAcc, pass1, pass2, duration, {value: amount}).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer(creatorAcc, passHash, duration, {value: amount}).should.be.rejectedWith('revert');
+        });
+
+
+        it('can\'t create transfer with invalid recipient address', async function () {
+            await this.remittance.createTransfer('', passHash, duration, {value: amount}).should.be.rejectedWith('revert');
         });
 
 
         it('can\'t create transfer with duration > maxduration', async function () {
-            await this.remittance.createTransfer.call(creatorAcc, pass1, pass2, overDuration, {value: amount}).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer.call(recivingAcc, passHash, overDuration, {value: amount}).should.be.rejectedWith('revert');
         });
 
 
         it('can\'t create same transfer twice', async function () {
-            await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {value: amount}).should.be.fulfilled;
-            await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {value: amount}).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount}).should.be.fulfilled;
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount}).should.be.rejectedWith('revert');
         });
     });
 
 
     describe('withdraw funds', function () {
         it('can withdraw funds with correct passwords from the correct address', async function () {
-            await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {value: amount}).should.be.fulfilled;
-            await this.remittance.withdrawFunds.call(pass1, pass2, {from: recivingAcc}).should.be.fulfilled;
-        });
-
-
-        it('can\'t withdraw funds with empty passwords from the correct address', async function () {
-            await this.remittance.withdrawFunds.call('', '', {from: recivingAcc}).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount, from: creatorAcc}).should.be.fulfilled;
+            await this.remittance.withdrawFunds.call(creatorAcc, pass1, pass2, {from: recivingAcc}).should.be.fulfilled;
         });
 
 
         it('can\'t withdraw funds with wrong passwords from the correct address', async function () {
-            await this.remittance.withdrawFunds.call(wrongPass1, wrongPass2, {from: recivingAcc}).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount, from: creatorAcc}).should.be.fulfilled;
+            await this.remittance.withdrawFunds.call(creatorAcc, wrongPass1, wrongPass2, {from: recivingAcc}).should.be.rejectedWith('revert');
         });
 
 
         it('can\'t withdraw funds with correct passwords from random address', async function ()  {
-            await this.remittance.withdrawFunds.call(pass1, pass2, {from: randomAcc}).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount, from: creatorAcc}).should.be.fulfilled;
+            await this.remittance.withdrawFunds.call(creatorAcc, pass1, pass2, {from: randomAcc}).should.be.rejectedWith('revert');
         });
 
 
         it('can revert funds with correct passwords from correct address when deadline is expired', async function () {
-            await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {value: amount}).should.be.fulfilled;
-            mineOneBlock();
-            mineOneBlock();
-            await this.remittance.refundTransfer.call(pass1, pass2, recivingAcc, {from: creatorAcc}).should.be.fulfilled;
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount}).should.be.fulfilled;
+            advanceBlock();
+            advanceBlock();
+            await this.remittance.refundTransfer(recivingAcc, passHash, {from: creatorAcc}).should.be.fulfilled;
         });
 
 
         it('can\'t revert funds with correct passwords from correct address when deadline isn\'t expired', async function () {
-            await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {value: amount}).should.be.fulfilled;
-            mineOneBlock();
-            await this.remittance.refundTransfer(pass1, pass2, recivingAcc, {from: creatorAcc}).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount}).should.be.fulfilled;
+            advanceBlock();
+            await this.remittance.refundTransfer(recivingAcc, passHash, {from: creatorAcc}).should.be.rejectedWith('revert');
         });
 
 
         it('other addresses than creator address can\'t refund transfer with correct passwords when deadline is expired', async function () {
-            await this.remittance.createTransfer.call(recivingAcc, pass1, pass2, duration, {from:creatorAcc, value: amount}).should.be.fulfilled;
-            mineOneBlock();
-            mineOneBlock();
-            await this.remittance.refundTransfer.call(pass1, pass2, recivingAcc, {from: randomAcc}).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount}).should.be.fulfilled;
+            advanceBlock();
+            advanceBlock();
+            await this.remittance.refundTransfer(recivingAcc, passHash, {from: randomAcc}).should.be.rejectedWith('revert');
         });
 
 
         it('creator address can\'t refund transfer with wrong passwords', async function () {
-            await this.remittance.createTransfer(recivingAcc, pass1, pass2, duration, {from: creatorAcc, value: amount}).should.be.fulfilled;
-            mineOneBlock();
-            mineOneBlock();
-            await this.remittance.refundTransfer.call(wrongPass1, wrongPass2, recivingAcc, {from: creatorAcc} ).should.be.rejectedWith('revert');
+            await this.remittance.createTransfer(recivingAcc, passHash, duration, {value: amount}).should.be.fulfilled;
+            advanceBlock();
+            advanceBlock();
+            await this.remittance.refundTransfer(recivingAcc, wrongPass1, {from: creatorAcc}).should.be.rejectedWith('revert');
         });
     });
 
