@@ -17,4 +17,4 @@ It would be even better if you could team up with different people impersonating
 Stretch goals:
   * [x] add a kill switch to the whole contract
   * [x] make the contract a utility that can be used by David, Emma and anybody with an address
-  * [x]cover potentially bad input data
+  * [x] cover potentially bad input data

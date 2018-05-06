@@ -4,8 +4,8 @@ pragma solidity ^0.4.21;
 contract Splitter {
     address public owner;
 
-    event Split(address depostitor, address out1, address out2, uint amount);
-    event LogSelfDestruct(address sender, uint amount);
+    event Split(address depostitor, address recivingAddr1, address recivingAddr2, uint amount);
+    event LogSelfDestruct(address sender, uint returnedAmount);
 
 
     modifier onlyOwner() {
@@ -14,7 +14,7 @@ contract Splitter {
     }
 
 
-    modifier checkForSameAddr(address _addr1, address _addr2, address _addr3) {
+    modifier checkForUniqueAddr(address _addr1, address _addr2, address _addr3) {
         require(_addr1 != _addr2 &&
                 _addr1 != _addr3 &&
                 _addr2 != _addr3);
@@ -39,7 +39,7 @@ contract Splitter {
     function split(address _recivingAddr1, address _recivingAddr2)
     validAddress(_recivingAddr1)
     validAddress(_recivingAddr2)
-    checkForSameAddr(msg.sender, _recivingAddr1, _recivingAddr2)
+    checkForUniqueAddr(msg.sender, _recivingAddr1, _recivingAddr2)
     public payable returns (bool success) {
 
         require(msg.value > 1);

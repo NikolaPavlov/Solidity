@@ -1,5 +1,5 @@
 ## Address Ropsten Network:
-Remittance: 0x22143681ccde8ab15fca7d0a645e8729a2f31cb6
+Remittance: 0x77af968dfffdce6278b0bb923c586b753e216404
 
 
 REMITTANCE
@@ -26,12 +26,3 @@ Stretch goals:
   * [?]plug a security hole (which one?) by changing one password to the recipient's address
   * [x] make the contract a utility that can be used by David, Emma and anybody with an address
   * [?]make you, the owner of the contract, take a cut of the Ethers smaller than what it would cost Alice to deploy the same contract herself
-
-
-  Remittance Behavior:
-  ----------------------
-* Constructor accept duration of the created transfers in blocks, if value isn't pass it's use MAXDURATION 1000000 blocks for deadline.
-* Anyone can create transfer with attached ethers for someone else to withdraw (recipient address and two passwords need to be provided) 
-* When transfer is created, the recipient can withdraw it if he knows both passwords and the duration isn't expired.
-* After deadline the creator of the transfer can revert it to himself.
-* If contract is killed all eth in it return to the owner.
